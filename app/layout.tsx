@@ -5,8 +5,13 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-  title: 'MCP Dashboard — Model Context Protocol Manager',
+  title: 'MCP Studio — Model Context Protocol Manager',
   description: 'Advanced dashboard for managing MCP servers, tools, and LLM interactions',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

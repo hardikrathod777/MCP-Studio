@@ -2,10 +2,48 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Eye, EyeOff, Sparkles, ChevronRight, KeyRound, Link2, Cpu } from 'lucide-react';
+import { Eye, EyeOff, Sparkles, ChevronRight, KeyRound, Link2, Cpu } from 'lucide-react';
 import ProviderSelector, { PROVIDER_LIST } from '@/app/components/ui/ProviderSelector';
 import ModelSelector from '@/app/components/ui/ModelSelector';
 import type { LLMConfig } from '@/app/types';
+
+/* ── Inline logo components ───────────────────────────────────── */
+function LogoIcon({ size = 80 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: 'block' }}
+    >
+      <rect width="32" height="32" rx="6" fill="#8B5CF6" />
+      <path d="M8 22V10L16 18L24 10V22" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="16" cy="24" r="2" fill="white" />
+    </svg>
+  );
+}
+
+function LogoWordmark({ height = 44 }: { height?: number }) {
+  const w = Math.round(height * (250 / 60));
+  return (
+    <svg
+      width={w}
+      height={height}
+      viewBox="0 0 250 60"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ display: 'block' }}
+    >
+      <rect x="5" y="10" width="40" height="40" rx="8" stroke="#8B5CF6" strokeWidth="3" fill="transparent" />
+      <path d="M15 40V20L25 30L35 20V40" stroke="#8B5CF6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="25" cy="40" r="3" fill="#8B5CF6" />
+      <text x="60" y="43" fill="white" fontFamily="Inter, sans-serif" fontWeight="800" fontSize="28">MCP</text>
+      <text x="131" y="43" fill="#8B5CF6" fontFamily="Inter, sans-serif" fontWeight="400" fontSize="28">Studio</text>
+    </svg>
+  );
+}
 
 interface SetupScreenProps {
   llmConfig: LLMConfig;
@@ -14,8 +52,8 @@ interface SetupScreenProps {
 }
 
 export default function SetupScreen({ llmConfig, onChange, onSave }: SetupScreenProps) {
-  const [showKey,       setShowKey]       = useState(false);
-  const [providerOpen,  setProviderOpen]  = useState(false);
+  const [showKey,      setShowKey]      = useState(false);
+  const [providerOpen, setProviderOpen] = useState(false);
 
   const currentDef = PROVIDER_LIST.find(p => p.value === llmConfig.provider) ?? PROVIDER_LIST[0];
 
@@ -54,32 +92,49 @@ export default function SetupScreen({ llmConfig, onChange, onSave }: SetupScreen
         transition={{ duration: 0.55, ease: 'easeOut' }}
         className="w-full max-w-lg relative z-10"
       >
-        {/* Hero */}
+        {/* ── Hero ────────────────────────────────────────────────── */}
         <div className="text-center mb-9">
+          {/* App icon with glow — the SVG has its own purple background */}
           <motion.div
-            initial={{ scale: 0.65, opacity: 0 }}
+            initial={{ scale: 0.6, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.08, type: 'spring', bounce: 0.38 }}
-            className="inline-flex items-center justify-center w-[72px] h-[72px] rounded-2xl mb-5"
+            className="inline-block mb-6"
             style={{
-              background: 'linear-gradient(135deg, var(--primary), var(--primary-dim))',
-              boxShadow: '0 0 40px var(--primary-glow), 0 0 80px rgba(139,92,246,0.08)',
+              borderRadius: 18,
+              boxShadow: '0 0 0 1px rgba(139,92,246,0.3), 0 0 40px rgba(139,92,246,0.5), 0 0 80px rgba(139,92,246,0.15)',
             }}
           >
-            <Brain className="w-9 h-9 text-white" />
+            <LogoIcon size={80} />
           </motion.div>
-          <h1 className="text-4xl font-bold tracking-tight gradient-text mb-1.5">MCP Dashboard</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+
+          {/* Wordmark */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.22 }}
+            className="flex justify-center mb-2"
+          >
+            <LogoWordmark height={42} />
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.32 }}
+            className="text-sm"
+            style={{ color: 'var(--text-muted)' }}
+          >
             Connect your LLM — then add MCP servers and start chatting
-          </p>
+          </motion.p>
         </div>
 
-        {/* Glass card */}
+        {/* ── Glass card ─────────────────────────────────────────── */}
         <div
           className="glass rounded-2xl overflow-visible"
           style={{ boxShadow: '0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.05)' }}
         >
-          {/* Coloured top bar */}
+          {/* Provider-coloured top bar */}
           <div
             className="h-1 w-full rounded-t-2xl"
             style={{ background: `linear-gradient(90deg, ${currentDef.color}, var(--accent))` }}
@@ -120,7 +175,10 @@ export default function SetupScreen({ llmConfig, onChange, onSave }: SetupScreen
               <label className="label-sm flex items-center gap-1.5 mb-2">
                 <KeyRound className="w-3 h-3" /> API Key
                 {isOllama && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded text-xs font-semibold" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>
+                  <span
+                    className="ml-1 px-1.5 py-0.5 rounded text-xs font-semibold"
+                    style={{ background: 'var(--success-bg)', color: 'var(--success)' }}
+                  >
                     not required
                   </span>
                 )}
