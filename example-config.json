@@ -1,0 +1,65 @@
+{
+  "name": "MCP Dashboard Example Configuration",
+  "description": "This is an example configuration showing how to set up MCP servers",
+  
+  "mcpServers": [
+    {
+      "id": "1",
+      "name": "Gmail MCP",
+      "url": "https://gmail.mcp.claude.com/mcp",
+      "type": "url",
+      "status": "disconnected"
+    },
+    {
+      "id": "2",
+      "name": "Google Calendar",
+      "url": "https://gcal.mcp.claude.com/mcp",
+      "type": "url",
+      "status": "disconnected"
+    },
+    {
+      "id": "3",
+      "name": "Filesystem MCP",
+      "url": "npx",
+      "type": "stdio",
+      "status": "disconnected",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/username/Documents"]
+    },
+    {
+      "id": "4",
+      "name": "GitHub MCP",
+      "url": "npx",
+      "type": "stdio",
+      "status": "disconnected",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "your-github-token-here"
+      }
+    }
+  ],
+  
+  "systemPrompt": "You are a helpful AI assistant with access to MCP tools. Use the available tools to help the user accomplish their tasks. Always explain what tools you're using and why. Be proactive in suggesting relevant tools based on the user's needs.",
+  
+  "notes": {
+    "apiKey": "Your API key should be configured in the UI, not in this file for security reasons",
+    "serverSetup": "Make sure your MCP servers are running and accessible before connecting",
+    "customServers": "You can add any MCP-compatible server by providing the correct URL or command"
+  },
+  
+  "exampleMCPServers": {
+    "anthropic_official": [
+      "Gmail: https://gmail.mcp.claude.com/mcp",
+      "Google Calendar: https://gcal.mcp.claude.com/mcp",
+      "Google Drive: https://gdrive.mcp.claude.com/mcp",
+      "Slack: https://slack.mcp.claude.com/mcp"
+    ],
+    "community": [
+      "Filesystem: npx -y @modelcontextprotocol/server-filesystem <directory>",
+      "GitHub: npx -y @modelcontextprotocol/server-github",
+      "PostgreSQL: npx -y @modelcontextprotocol/server-postgres",
+      "Brave Search: npx -y @modelcontextprotocol/server-brave-search"
+    ]
+  }
+}
