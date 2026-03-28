@@ -14,6 +14,7 @@ import type {
   LLMConfig, MCPServer, MCPTool, Message, TokenUsage,
   ActiveTab, AppView, LLMProvider,
 } from '@/app/types';
+import { PROVIDER_LIST } from '@/app/components/ui/ProviderSelector';
 
 /* ─── Helpers ──────────────────────────────────────────────────────── */
 const DEFAULT_SYSTEM_PROMPT =
@@ -27,11 +28,9 @@ const DEFAULT_LLM: LLMConfig = {
 };
 
 function providerDefaults(provider: LLMProvider): Partial<LLMConfig> {
-  switch (provider) {
-    case 'openai':    return { apiUrl: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini' };
-    case 'anthropic': return { apiUrl: 'https://api.anthropic.com/v1/messages',     model: 'claude-sonnet-4-20250514' };
-    default:          return {};
-  }
+  const def = PROVIDER_LIST.find(p => p.value === provider);
+  if (!def) return {};
+  return { apiUrl: def.url, model: def.models[0]?.value ?? '' };
 }
 
 function calculateCost(usage: { input_tokens?: number; output_tokens?: number }) {
