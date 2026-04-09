@@ -27,6 +27,7 @@ export interface MCPServer {
   url: string;
   type: ServerType;
   status: ServerStatus;
+  errorMessage?: string;
   command?: string;
   args?: string[];
   env?: Record<string, string>;

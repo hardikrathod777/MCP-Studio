@@ -38,6 +38,30 @@ function timeoutError(operation: string) {
   return new Error(`${operation} timed out after ${REQUEST_TIMEOUT_MS / 1000}s`);
 }
 
+function isDeployedRuntime(requestUrl: string) {
+  const hostname = new URL(requestUrl).hostname;
+  return process.env.VERCEL === '1' || hostname !== 'localhost';
+}
+
+function isLoopbackOrPrivateHost(hostname: string) {
+  const normalized = hostname.trim().toLowerCase();
+  if (normalized === 'localhost' || normalized === '127.0.0.1' || normalized === '::1') {
+    return true;
+  }
+
+  if (/^127\.\d+\.\d+\.\d+$/.test(normalized)) return true;
+  if (/^10\.\d+\.\d+\.\d+$/.test(normalized)) return true;
+  if (/^192\.168\.\d+\.\d+$/.test(normalized)) return true;
+
+  const match172 = normalized.match(/^172\.(\d+)\.\d+\.\d+$/);
+  if (match172) {
+    const secondOctet = Number(match172[1]);
+    if (secondOctet >= 16 && secondOctet <= 31) return true;
+  }
+
+  return false;
+}
+
 async function discoverTools(server: DiscoverServerPayload): Promise<DiscoveredTool[]> {
   if (server.type === 'stdio') {
     return discoverToolsOverStdio(server);
@@ -415,6 +439,29 @@ function parseSseJsonRpc(rawSse: string, requestId?: number): JsonRpcMessage {
 export async function POST(request: Request) {
   try {
     const server = await request.json() as DiscoverServerPayload;
+    const deployed = isDeployedRuntime(request.url);
+
+    if (server.type === 'stdio' && deployed) {
+      return NextResponse.json(
+        {
+          error: 'STDIO MCP servers cannot be reached from a deployed Vercel site. Use local development or a local companion/relay process.',
+        },
+        { status: 400 },
+      );
+    }
+
+    if (server.type === 'url') {
+      const hostname = new URL(server.url).hostname;
+      if (deployed && isLoopbackOrPrivateHost(hostname)) {
+        return NextResponse.json(
+          {
+            error: `This deployed site cannot reach ${hostname}. From Vercel, localhost/private IP addresses refer to the serverless runtime, not your computer. Expose the MCP server on a public HTTPS URL or use a local desktop/relay app.`,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     const tools = await discoverTools(server);
     return NextResponse.json({ tools });
   } catch (error) {

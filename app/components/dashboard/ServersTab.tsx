@@ -233,6 +233,15 @@ export default function ServersTab({ servers, tools, onAdd, onDelete, onTest }: 
                     </span>
                   )}
                 </div>
+                {server.status === 'error' && server.errorMessage && (
+                  <p
+                    className="mt-3 text-xs leading-relaxed"
+                    style={{ color: 'var(--error)' }}
+                    title={server.errorMessage}
+                  >
+                    {server.errorMessage}
+                  </p>
+                )}
               </motion.div>
             );
           })}

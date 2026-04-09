@@ -55,6 +55,7 @@ function normalizeServerConfig(partial: Partial<MCPServer>): MCPServer | null {
     url,
     type,
     status: 'disconnected',
+    errorMessage: undefined,
     command,
     args: partial.args,
     env: partial.env,
@@ -115,7 +116,7 @@ export default function MCPDashboard() {
     persistServers(servers.map(s => (s.id === id ? { ...s, ...updates } : s)));
 
   const handleTestConnection = async (server: MCPServer) => {
-    updateServer(server.id, { status: 'disconnected' });
+    updateServer(server.id, { status: 'disconnected', errorMessage: undefined });
     try {
       const res = await fetch('/api/mcp/tools', {
         method: 'POST',
@@ -130,9 +131,12 @@ export default function MCPDashboard() {
 
       const discoveredTools: MCPTool[] = Array.isArray(data?.tools) ? data.tools : [];
       setTools(prev => [...prev.filter(t => t.serverId !== server.id), ...discoveredTools]);
-      updateServer(server.id, { status: 'connected' });
-    } catch {
-      updateServer(server.id, { status: 'error' });
+      updateServer(server.id, { status: 'connected', errorMessage: undefined });
+    } catch (error) {
+      updateServer(server.id, {
+        status: 'error',
+        errorMessage: error instanceof Error ? error.message : 'Failed to discover MCP tools',
+      });
     }
   };
 
