@@ -24,9 +24,13 @@ export default function ServersTab({ servers, tools, onAdd, onDelete, onTest }: 
   const [form, setForm] = useState<Partial<MCPServer>>({ type: 'url', status: 'disconnected' });
   const [formOpen, setFormOpen] = useState(servers.length === 0);
   const [testing, setTesting] = useState<string | null>(null);
+  const requiresUrl = form.type !== 'stdio';
+  const isFormValid = requiresUrl
+    ? Boolean(form.name && form.url)
+    : Boolean(form.name && (form.command || form.url));
 
   const handleAdd = () => {
-    if (!form.name || !form.url) return;
+    if (!isFormValid) return;
     onAdd(form);
     setForm({ type: 'url', status: 'disconnected' });
     setFormOpen(false);
@@ -95,8 +99,12 @@ export default function ServersTab({ servers, tools, onAdd, onDelete, onTest }: 
                     </label>
                     <input
                       className="input-field mono"
-                      value={form.url || ''}
-                      onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
+                      value={form.type === 'url' ? (form.url || '') : (form.command || form.url || '')}
+                      onChange={e => setForm(f => (
+                        form.type === 'url'
+                          ? { ...f, url: e.target.value }
+                          : { ...f, command: e.target.value, url: e.target.value }
+                      ))}
                       placeholder={form.type === 'url' ? 'https://mcp.example.com/sse' : 'npx'}
                     />
                   </div>
@@ -116,7 +124,7 @@ export default function ServersTab({ servers, tools, onAdd, onDelete, onTest }: 
                 </div>
                 <button
                   onClick={handleAdd}
-                  disabled={!form.name || !form.url}
+                  disabled={!isFormValid}
                   className="btn-primary"
                 >
                   <Plus className="w-4 h-4" />

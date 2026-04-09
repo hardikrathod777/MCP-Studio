@@ -39,6 +39,28 @@ function calculateCost(usage: { input_tokens?: number; output_tokens?: number })
   return inp + out;
 }
 
+function normalizeServerConfig(partial: Partial<MCPServer>): MCPServer | null {
+  if (!partial.name) return null;
+
+  const type = partial.type ?? 'url';
+  const command = type === 'stdio' ? (partial.command ?? partial.url ?? '').trim() : partial.command;
+  const url = type === 'url' ? (partial.url ?? '').trim() : (partial.url ?? command ?? '').trim();
+
+  if (type === 'url' && !url) return null;
+  if (type === 'stdio' && !command) return null;
+
+  return {
+    id: Date.now().toString(),
+    name: partial.name,
+    url,
+    type,
+    status: 'disconnected',
+    command,
+    args: partial.args,
+    env: partial.env,
+  };
+}
+
 /* ─── Page ─────────────────────────────────────────────────────────── */
 export default function MCPDashboard() {
   const [view,        setView]        = useState<AppView>('setup');
@@ -79,17 +101,8 @@ export default function MCPDashboard() {
   };
 
   const handleAddServer = (partial: Partial<MCPServer>) => {
-    if (!partial.name || !partial.url) return;
-    const server: MCPServer = {
-      id:      Date.now().toString(),
-      name:    partial.name,
-      url:     partial.url,
-      type:    partial.type ?? 'url',
-      status:  'disconnected',
-      command: partial.command,
-      args:    partial.args,
-      env:     partial.env,
-    };
+    const server = normalizeServerConfig(partial);
+    if (!server) return;
     persistServers([...servers, server]);
   };
 
@@ -104,12 +117,19 @@ export default function MCPDashboard() {
   const handleTestConnection = async (server: MCPServer) => {
     updateServer(server.id, { status: 'disconnected' });
     try {
-      await new Promise(r => setTimeout(r, 1200));
-      const mockTools: MCPTool[] = [
-        { name: `${server.name.toLowerCase().replace(/\s+/g, '_')}_search`, description: `Search functionality for ${server.name}`, inputSchema: {}, serverId: server.id },
-        { name: `${server.name.toLowerCase().replace(/\s+/g, '_')}_create`, description: `Create items in ${server.name}`,           inputSchema: {}, serverId: server.id },
-      ];
-      setTools(prev => [...prev.filter(t => t.serverId !== server.id), ...mockTools]);
+      const res = await fetch('/api/mcp/tools', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(server),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error ?? 'Failed to discover MCP tools');
+      }
+
+      const discoveredTools: MCPTool[] = Array.isArray(data?.tools) ? data.tools : [];
+      setTools(prev => [...prev.filter(t => t.serverId !== server.id), ...discoveredTools]);
       updateServer(server.id, { status: 'connected' });
     } catch {
       updateServer(server.id, { status: 'error' });
@@ -136,7 +156,11 @@ export default function MCPDashboard() {
 
       const mcpConnected = servers
         .filter(s => s.status === 'connected')
-        .map(s => ({ type: s.type, url: s.url, name: s.name, ...(s.command && { command: s.command }), ...(s.args && { args: s.args }), ...(s.env && { env: s.env }) }));
+        .map(s => (
+          s.type === 'stdio'
+            ? { type: s.type, name: s.name, command: s.command ?? s.url, ...(s.args && { args: s.args }), ...(s.env && { env: s.env }) }
+            : { type: s.type, url: s.url, name: s.name, ...(s.env && { env: s.env }) }
+        ));
 
       const apiMsgs = updated.map(m => ({ role: m.role, content: m.content }));
 
